@@ -1,15 +1,13 @@
 package io.github.aureojr.core.catalog.domain;
 
-import io.github.aureojr.core.infrastructure.database.annotations.DefaultModel;
-
 import java.util.List;
 
 /**
  * @author @aureojr
  * @since 29/12/16.
  */
-@DefaultModel
 public interface Product {
+
     boolean isEnabled();
 
     void setEnabled(boolean enabled);

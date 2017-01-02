@@ -1,7 +1,7 @@
 package io.github.aureojr.core.profile.domain;
 
-import io.github.aureojr.core.infrastructure.database.annotations.DefaultModel;
-import io.github.aureojr.core.infrastructure.database.annotations.TransientField;
+import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
+import io.github.aureojr.infrastructure.database.annotations.TransientField;
 
 import java.util.Locale;
 

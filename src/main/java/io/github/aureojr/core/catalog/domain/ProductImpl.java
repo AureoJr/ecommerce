@@ -1,13 +1,18 @@
 package io.github.aureojr.core.catalog.domain;
 
+import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
+import io.github.aureojr.infrastructure.database.annotations.ID;
+
 import java.util.List;
 
 /**
  * @author @aureojr
  * @since 29/12/16.
  */
+@DefaultModel
 public class ProductImpl implements Product{
 
+    @ID
     private long id;
 
     private String name;
