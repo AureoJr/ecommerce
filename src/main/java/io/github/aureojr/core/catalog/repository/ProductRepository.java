@@ -2,6 +2,7 @@ package io.github.aureojr.core.catalog.repository;
 
 import io.github.aureojr.core.catalog.domain.Category;
 import io.github.aureojr.core.catalog.domain.Product;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 

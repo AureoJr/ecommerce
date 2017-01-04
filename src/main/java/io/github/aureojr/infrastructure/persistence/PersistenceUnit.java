@@ -8,12 +8,12 @@ import java.util.List;
  */
 public interface PersistenceUnit<T> {
 
-    void save(T entity);
+    void save(Class entity);
 
-    void delete(T entity);
+    void delete(Class entity);
 
-    T findById(T entity);
+    T findById(Class entity);
 
-    List<T> findAll(T entity);
+    List<T> findAll(Class entity);
 
 }

@@ -7,7 +7,7 @@ import io.github.aureojr.infrastructure.database.annotations.ID;
  * @author @aureojr
  * @since 29/12/16.
  */
-@DefaultModel
+@DefaultModel(name = "category")
 public class CategoryImpl implements Category{
 
     @ID

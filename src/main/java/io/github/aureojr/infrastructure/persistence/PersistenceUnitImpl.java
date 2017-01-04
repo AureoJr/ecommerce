@@ -3,6 +3,7 @@ package io.github.aureojr.infrastructure.persistence;
 import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
 import io.github.aureojr.infrastructure.database.annotations.ID;
 import io.github.aureojr.infrastructure.database.annotations.TransientField;
+import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
  * @author @aureojr
  * @since 30/12/16.
  */
+@Component("persistenceUnit")
 public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
     private static final String INSERT = "INSERT INTO $table ($fields) VALUES ($values)";
@@ -36,7 +38,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     public PersistenceUnitImpl() {
         if(conn == null){
             try {
-                conn = DriverManager.getConnection("127.0.0.1:3306/ecommerce","usuario","usuario123");
+                conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ecommerce","root","alfred2016");
             } catch (SQLException e) {
                 LOG.log(Level.SEVERE,e.getMessage(),e);
             }
@@ -45,7 +47,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
 
     @Override
-    public void save(T entity) {
+    public void save(Class entity) {
 
         final StringBuilder insert = new StringBuilder();
 
@@ -58,17 +60,17 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
     }
 
-    private void prepareParametersInsert(T entity, StringBuilder sb) throws SQLException {
+    private void prepareParametersInsert(Class entity, StringBuilder sb) throws SQLException {
 
         StringJoiner sj = getFields(entity);
 
-        if(entity.getClass().isAnnotationPresent(DefaultModel.class)){
+        if(entity.isAnnotationPresent(DefaultModel.class)){
             LOG.log(Level.SEVERE, "A classe não possui a anotação DefaultModel");
             return;
         }
 
-        replace(TABLE,entity.getClass().getSimpleName(),sb);
-        finalizeInsert(sb,sj.toString(),entity);
+        replace(TABLE,entity.getSimpleName(),sb);
+        finalizeInsert(sb,sj.toString());
 
         PreparedStatement ps = conn.prepareStatement(sb.toString());
 
@@ -90,18 +92,18 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
     }
 
-    private StringJoiner getFields(T entity) {
+    private StringJoiner getFields(Class entity) {
 
         StringJoiner sj = new StringJoiner(", ");
-        Arrays.stream(entity.getClass().getDeclaredFields())
+        Arrays.stream(entity.getDeclaredFields())
                 .filter(field -> !field.isAnnotationPresent(TransientField.class))
                 .forEach(field -> sj.add(field.getName()));
         return sj;
     }
 
-    private boolean isAnnotated(T entity, String field) {
+    private boolean isAnnotated(Class entity, String field) {
         try {
-            return !entity.getClass().getField(field).isAnnotationPresent(TransientField.class);
+            return !entity.getField(field).isAnnotationPresent(TransientField.class);
         } catch (NoSuchFieldException e) {
             LOG.log(Level.SEVERE, e.getMessage(),e);
         }
@@ -113,7 +115,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         return count ;
     }
 
-    private void finalizeInsert(StringBuilder sb,String fields, T entity) {
+    private void finalizeInsert(StringBuilder sb,String fields) {
         StringJoiner sj = new StringJoiner(",");
         for(int i = 1; i < fields.length() - fields.replace(",", "").length() + 1; i ++ )
             sj.add("?");
@@ -125,7 +127,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     }
 
     @Override
-    public void delete(T entity) {
+    public void delete(Class entity) {
 
         StringBuilder delete = new StringBuilder();
         delete.append(DELETE);
@@ -137,9 +139,9 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         }
     }
 
-    private void prepareDelete(StringBuilder delete, T entity) throws NoSuchFieldException, SQLException, IllegalAccessException {
+    private void prepareDelete(StringBuilder delete, Class entity) throws NoSuchFieldException, SQLException, IllegalAccessException {
         long valor;
-        replace(TABLE,entity.getClass().getSimpleName(),delete);
+        replace(TABLE,getTableName(entity),delete);
 
         valor = appendId(entity,delete);
         PreparedStatement ps = conn.prepareStatement(delete.toString());
@@ -148,25 +150,25 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         ps.executeUpdate();
     }
 
-    private long appendId(T entity , StringBuilder sb) throws NoSuchFieldException, IllegalAccessException {
-        ID id = entity.getClass().getAnnotation(ID.class);
+    private long appendId(Class entity , StringBuilder sb) throws NoSuchFieldException, IllegalAccessException {
+        ID id = (ID) entity.getAnnotation(ID.class);
         long valor = (long) entity.getClass().getField(id.name()).get(entity);
         replace(WHERE,id.name()+ " = ?", sb);
         return valor;
     }
 
     @Override
-    public T findById(T entity) {
+    public T findById(Class entity) {
 
         StringBuilder select = new StringBuilder();
         select.append(SELECT);
 
-        prepareSelect(select,entity);
+        prepareSelect(select,entity.getClass());
         try(PreparedStatement ps = conn.prepareStatement(select.toString())) {
             long valor = appendId(entity, select);
             ps.setObject(1,valor);
 
-            return parseObject(ps.getResultSet());
+            return parseObject(ps.getResultSet(),entity);
 
         } catch (NoSuchFieldException | IllegalAccessException | SQLException e){
             LOG.log(Level.SEVERE, e.getMessage(),e);
@@ -174,40 +176,52 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         return null;
     }
 
-    private T parseObject(ResultSet resultSet) throws SQLException {
-         T entity = (T)new Object();
-
-        Arrays.stream(entity.getClass().getDeclaredFields())
+    private T parseObject(ResultSet resultSet,Class entity) throws SQLException {
+        T ret = null;
+        try {
+            ret = (T) entity.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            LOG.log(Level.SEVERE, e.getMessage(), e);
+        }
+        T finalRet = ret;
+        Arrays.stream(entity.getDeclaredFields())
                 .forEach(field -> {
                     field.setAccessible(true);
                     try {
-                        field.set(entity, resultSet.getObject(field.getName()));
+                        field.set(finalRet, resultSet.getObject(field.getName()));
                     } catch (IllegalAccessException | SQLException e) {
                         LOG.log(Level.SEVERE, e.getMessage(), e);
                     }
                 });
 
-        return entity;
+        return ret;
     }
 
-    private void prepareSelect(StringBuilder select, T entity) {
-        replace(TABLE, entity.getClass().getName(), select);
-        StringJoiner sj =getFields(entity);
+    private void prepareSelect(StringBuilder select, Class entity) {
+        replace(TABLE, getTableName(entity), select);
+        StringJoiner sj = getFields(entity);
         replace(FIELDS,sj.toString(),select);
+        replace(WHERE," 1 = 1 ",select);
+    }
+
+    private String getTableName(Class entity) {
+        DefaultModel defaultModel = (DefaultModel) entity.getDeclaredAnnotation(DefaultModel.class);
+
+        return defaultModel.name();
     }
 
     @Override
-    public List<T> findAll(T entity) {
+    public List<T> findAll(Class entity) {
         StringBuilder select = new StringBuilder();
-        List<T> returnList = new ArrayList<T>();
+        List<T> returnList = new ArrayList<>();
         select.append(SELECT);
 
-        prepareSelect(select,entity);
+        prepareSelect(select, entity);
         try(PreparedStatement ps = conn.prepareStatement(select.toString())) {
-
+            ps.execute();
             ResultSet rs = ps.getResultSet();
             while (rs.next())
-                returnList.add(parseObject(rs));
+                returnList.add(parseObject(rs,entity));
 
             return returnList;
         } catch (SQLException e){
