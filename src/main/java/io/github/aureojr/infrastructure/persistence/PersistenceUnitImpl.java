@@ -150,15 +150,15 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         ps.executeUpdate();
     }
 
-    private long appendId(Class entity , StringBuilder sb) throws NoSuchFieldException, IllegalAccessException {
-        ID id = (ID) entity.getAnnotation(ID.class);
+    private long appendId(Object entity , StringBuilder sb) throws NoSuchFieldException, IllegalAccessException {
+        ID id = entity.getClass().getAnnotation(ID.class);
         long valor = (long) entity.getClass().getField(id.name()).get(entity);
         replace(WHERE,id.name()+ " = ?", sb);
         return valor;
     }
 
     @Override
-    public T findById(Class entity) {
+    public T findById(Object entity) {
 
         StringBuilder select = new StringBuilder();
         select.append(SELECT);
@@ -168,7 +168,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
             long valor = appendId(entity, select);
             ps.setObject(1,valor);
 
-            return parseObject(ps.getResultSet(),entity);
+            return parseObject(ps.getResultSet(),entity.getClass());
 
         } catch (NoSuchFieldException | IllegalAccessException | SQLException e){
             LOG.log(Level.SEVERE, e.getMessage(),e);
@@ -201,7 +201,10 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         replace(TABLE, getTableName(entity), select);
         StringJoiner sj = getFields(entity);
         replace(FIELDS,sj.toString(),select);
-        replace(WHERE," 1 = 1 ",select);
+    }
+    private void prepareSelect(StringBuilder select, Class entity, String where) {
+        prepareSelect(select,entity);
+        replace(WHERE,where == null ? " 1 = 1 " : where,select);
     }
 
     private String getTableName(Class entity) {
@@ -212,22 +215,32 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
     @Override
     public List<T> findAll(Class entity) {
+
+        return defaultFind(entity, null);
+    }
+
+    public List<T> defaultFind(Class entity,String where) {
         StringBuilder select = new StringBuilder();
         List<T> returnList = new ArrayList<>();
         select.append(SELECT);
 
-        prepareSelect(select, entity);
-        try(PreparedStatement ps = conn.prepareStatement(select.toString())) {
+        prepareSelect(select, entity, where);
+        try (PreparedStatement ps = conn.prepareStatement(select.toString())) {
             ps.execute();
             ResultSet rs = ps.getResultSet();
             while (rs.next())
-                returnList.add(parseObject(rs,entity));
+                returnList.add(parseObject(rs, entity));
 
             return returnList;
-        } catch (SQLException e){
-            LOG.log(Level.SEVERE, e.getMessage(),e);
+        } catch (SQLException e) {
+            LOG.log(Level.SEVERE, e.getMessage(), e);
         }
 
-        return  null;
+        return null;
+    }
+
+    @Override
+    public List<T> find(Class entity, String where) {
+        return defaultFind(entity,where);
     }
 }

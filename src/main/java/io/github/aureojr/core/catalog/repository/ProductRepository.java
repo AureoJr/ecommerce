@@ -24,8 +24,10 @@ public interface ProductRepository {
 
     void disableProduct(Category category);
 
-    Product getProductById(long productID);
+    Product getProductById(Object productID);
 
     List<Category> getAllCategories();
+
+    List<Product> getProductsByCategoryName(String categoryName);
 
 }

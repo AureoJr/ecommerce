@@ -12,8 +12,9 @@ public interface PersistenceUnit<T> {
 
     void delete(Class entity);
 
-    T findById(Class entity);
+    T findById(Object entity);
 
     List<T> findAll(Class entity);
 
+    List<T> find(Class entity, String where);
 }

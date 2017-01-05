@@ -2,6 +2,7 @@ package io.github.aureojr.core.catalog.domain;
 
 import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
 import io.github.aureojr.infrastructure.database.annotations.ID;
+import io.github.aureojr.infrastructure.database.annotations.TransientField;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * @author @aureojr
  * @since 29/12/16.
  */
-@DefaultModel
+@DefaultModel(name = "product")
 public class ProductImpl implements Product{
 
     @ID
@@ -29,9 +30,21 @@ public class ProductImpl implements Product{
 
     private double price;
 
+    @TransientField
     private Category mainCategory;
 
+    @TransientField
     private List<Category> categories;
+
+    private String defaultImage;
+
+    public String getDefaultImage() {
+        return defaultImage;
+    }
+
+    public void setDefaultImage(String defaultImage) {
+        this.defaultImage = defaultImage;
+    }
 
     private boolean enabled;
 
