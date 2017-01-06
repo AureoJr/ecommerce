@@ -10,6 +10,8 @@ public interface PersistenceUnit<T> {
 
     void save(Class entity);
 
+    void update(Class entity, Object object);
+
     void delete(Class entity);
 
     T findById(Object entity);

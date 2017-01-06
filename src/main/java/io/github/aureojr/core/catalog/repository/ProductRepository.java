@@ -2,6 +2,7 @@ package io.github.aureojr.core.catalog.repository;
 
 import io.github.aureojr.core.catalog.domain.Category;
 import io.github.aureojr.core.catalog.domain.Product;
+import io.github.aureojr.core.catalog.domain.ProductImpl;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -30,4 +31,5 @@ public interface ProductRepository {
 
     List<Product> getProductsByCategoryName(String categoryName);
 
+    void doCheckout(List<Product> products);
 }

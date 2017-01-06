@@ -9,6 +9,24 @@
         [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
             display: none !important;
         }
+
+        .fabSpeedDialdemoBasicUsage .text-capitalize {
+            text-transform: capitalize; }
+
+        .fabSpeedDialdemoBasicUsage .md-fab:hover, .fabSpeedDialdemoBasicUsage .md-fab.md-focused {
+            background-color: #000 !important; }
+
+        .fabSpeedDialdemoBasicUsage p.note {
+            font-size: 1.2rem; }
+
+        .fabSpeedDialdemoBasicUsage .lock-size {
+            min-width: 300px;
+            min-height: 300px;
+            width: 300px;
+            height: 300px;
+            margin-left: auto;
+            margin-right: auto; }
+
     </style>
 </head>
 
@@ -17,7 +35,7 @@
     <md-toolbar ng-controller="CategoryController as category">
         <div class="md-toolbar-tools">
             <h2>
-                <a ng-href="/home "> Home </a>
+                <a ng-href="/"> Home </a>
             </h2>
             <span flex></span>
             <md-button class="md-fab md-mini" style="line-height: initial" ng-click="goTo('/cart')">

@@ -1,0 +1,31 @@
+
+<md-subheader class="md-no-sticky">Produtos no carrinho</md-subheader>
+<md-list>
+    <md-list-item ng-repeat="product in cart.products"  class="noright">
+        <img alt="{{ product.name }}" ng-src="{{ product.defaultImage }}" class="md-avatar" />
+        <p>{{ product.name }} - <strong> {{ product.price | currency }}</strong></p>
+        <md-checkbox class="md-secondary" ng-model="!product.enabled"></md-checkbox>
+    </md-list-item>
+</md-list>
+
+<div class="lock-size" layout="row" layout-align="center center">
+    <md-fab-speed-dial md-open="cart.isOpen" md-direction="up" ng-class="md-scale">
+        <md-fab-trigger>
+            <md-button aria-label="menu" class="md-fab md-warn">
+                <md-icon md-font-set="material-icons">menu</md-icon>
+            </md-button>
+        </md-fab-trigger>
+
+        <md-fab-actions>
+            <md-button aria-label="Finalizar compra" class="md-fab md-raised md-mini">
+                <md-icon md-font-set="material-icons">done_all</md-icon>
+            </md-button>
+            <md-button aria-label="Remover Carrinho" class="md-fab md-raised md-mini">
+                <md-icon md-font-set="material-icons">delete_all</md-icon>
+            </md-button>
+            <md-button aria-label="Voltar às compras" class="md-fab md-raised md-mini">
+                <md-icon md-font-set="material-icons">local_offer</md-icon>
+            </md-button>
+        </md-fab-actions>
+    </md-fab-speed-dial>
+</div>

@@ -8,21 +8,21 @@ import java.util.List;
  */
 public interface Product {
 
-    boolean isEnabled();
+    Boolean isEnabled();
 
-    void setEnabled(boolean enabled);
+    void setEnabled(Boolean enabled);
 
-    long getId();
+    Long getId();
 
-    void setId(long id);
+    void setId(Long id);
 
     String getName();
 
     void setName(String name);
 
-    long getQuantityAvailable();
+    Integer getQuantityAvailable();
 
-    void setQuantityAvailable(long quantityAvailable);
+    void setQuantityAvailable(Integer quantityAvailable);
 
     String getSize();
 
@@ -40,9 +40,9 @@ public interface Product {
 
     void setDescription(String description);
 
-    double getPrice();
+    Double getPrice();
 
-    void setPrice(double price);
+    void setPrice(Double price);
 
     Category getMainCategory();
 
@@ -51,4 +51,6 @@ public interface Product {
     List<Category> getCategories();
 
     void setCategories(List<Category> categories);
+
+    void updateStock(Product byId);
 }

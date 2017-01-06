@@ -243,4 +243,9 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     public List<T> find(Class entity, String where) {
         return defaultFind(entity,where);
     }
+
+    @Override
+    public void update(Class entity, Object object) {
+
+    }
 }

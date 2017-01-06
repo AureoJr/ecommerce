@@ -4,21 +4,23 @@ import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
 import io.github.aureojr.infrastructure.database.annotations.ID;
 import io.github.aureojr.infrastructure.database.annotations.TransientField;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author @aureojr
  * @since 29/12/16.
  */
 @DefaultModel(name = "product")
-public class ProductImpl implements Product{
+public class ProductImpl implements Product,Serializable{
 
     @ID
-    private long id;
+    private Long id;
 
     private String name;
 
-    private long quantityAvailable;
+    private Integer quantityAvailable;
 
     private String size;
 
@@ -28,7 +30,7 @@ public class ProductImpl implements Product{
 
     private String description;
 
-    private double price;
+    private Double price;
 
     @TransientField
     private Category mainCategory;
@@ -46,21 +48,21 @@ public class ProductImpl implements Product{
         this.defaultImage = defaultImage;
     }
 
-    private boolean enabled;
+    private Boolean enabled;
 
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -72,11 +74,11 @@ public class ProductImpl implements Product{
         this.name = name;
     }
 
-    public long getQuantityAvailable() {
+    public Integer getQuantityAvailable() {
         return quantityAvailable;
     }
 
-    public void setQuantityAvailable(long quantityAvailable) {
+    public void setQuantityAvailable(Integer quantityAvailable) {
         this.quantityAvailable = quantityAvailable;
     }
 
@@ -112,11 +114,11 @@ public class ProductImpl implements Product{
         this.description = description;
     }
 
-    public double getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 
@@ -134,5 +136,16 @@ public class ProductImpl implements Product{
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    @Override
+    public void updateStock(Product oldProduct) {
+        if(Objects.equals(oldProduct.getQuantityAvailable(), quantityAvailable))
+            setQuantityAvailable(quantityAvailable - 1);
+        setQuantityAvailable((quantityAvailable - oldProduct.getQuantityAvailable()) * -1 );
+
+        if(quantityAvailable <= 0 )
+            setEnabled(false);
+
     }
 }

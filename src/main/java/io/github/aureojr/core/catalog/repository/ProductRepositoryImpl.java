@@ -24,7 +24,6 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Resource(name = "persistenceUnit")
     private PersistenceUnit<Product> productPU;
 
-
     @Override
     public List<Product> getProductsByCategory(Category category) {
         return null;
@@ -77,5 +76,15 @@ public class ProductRepositoryImpl implements ProductRepository {
             )
         );
         return returnList;
+    }
+
+    @Override
+    public  void doCheckout(List<Product> products){
+
+        products.forEach(product -> {
+                product.updateStock(productPU.findById(product));
+                productPU.update(ProductImpl.class, product);
+        });
+
     }
 }
