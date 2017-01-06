@@ -1,14 +1,22 @@
-
-<md-subheader class="md-no-sticky">Produtos no carrinho</md-subheader>
-<md-list>
-    <md-list-item ng-repeat="product in cart.products"  class="noright">
-        <img alt="{{ product.name }}" ng-src="{{ product.defaultImage }}" class="md-avatar" />
-        <p>{{ product.name }} - <strong> {{ product.price | currency }}</strong></p>
-        <md-checkbox class="md-secondary" ng-model="!product.enabled"></md-checkbox>
-    </md-list-item>
-</md-list>
-
-<div class="lock-size" layout="row" layout-align="center center">
+<md-content flex layout="column">
+    <div flex="5" layout="row" layout-align="center">
+        <md-toolbar flex="100" style="height: auto">
+            <h2 class="md-toolbar-tools">
+                <span>Produtos no carrinho</span>
+            </h2>
+        </md-toolbar>
+    </div>
+    <md-content flex="100" layout="row" layout-align="center" >
+            <md-list style="width: 100%;">
+                <md-list-item ng-repeat="product in cart.products"  class="noright">
+                    <img alt="{{ product.name }}" ng-src="{{ product.defaultImage }}" class="md-avatar" />
+                    <p>{{ product.name }} - <strong> {{ product.price | currency }}</strong></p>
+                    <md-checkbox class="md-secondary" ng-model="!product.enabled"></md-checkbox>
+                </md-list-item>
+            </md-list>
+    </md-content>
+</md-content>
+<div class="lock-size" layout="row" layout-align="center center" style="position: fixed;bottom: 25px; left: 50%;">
     <md-fab-speed-dial md-open="cart.isOpen" md-direction="up" ng-class="md-scale">
         <md-fab-trigger>
             <md-button aria-label="menu" class="md-fab md-warn">
@@ -17,7 +25,7 @@
         </md-fab-trigger>
 
         <md-fab-actions>
-            <md-button aria-label="Finalizar compra" class="md-fab md-raised md-mini">
+            <md-button aria-label="Finalizar compra" ng-click="cart.finalizar()" class="md-fab md-raised md-mini">
                 <md-icon md-font-set="material-icons">done_all</md-icon>
             </md-button>
             <md-button aria-label="Remover Carrinho" class="md-fab md-raised md-mini">

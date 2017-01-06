@@ -63,13 +63,34 @@ app.config(function($routeProvider,$httpProvider) {
         );
     };
 
-}).controller("CartController", function($http,$mdToast){
+}).controller("CartController", function($http,$mdToast,$scope, $mdDialog){
     var self = this;
     self.isOpen = false;
 
     $http.get("/cart").then(function (response) {
         self.products = response.data.products;
     });
+    $scope.finalizar = function(ev){
+        // Appending dialog to document.body to cover sidenav in docs app
+        var confirm = $mdDialog.confirm()
+            .title('Deseja finalizar o pedido ?')
+            .textContent('Seu pedifo possui alguns items, gostario de finalizá-lo.')
+            .targetEvent(ev)
+            .ok('Sim')
+            .cancel('Preciso compra mais ');
+        $mdDialog.show(confirm).then(function() {
+            $http.post("cart/checkout").then(function (response) {
+                $mdToast.show(
+                    $mdToast.simple()
+                        .textContent(response.data.message)
+                        .position('bottom right')
+                        .hideDelay(3000)
+                );
+
+            })
+        }, function() {});
+
+    };
     $http.get("/cart/checkout").then(function (response) {
 
         $mdToast.show(
@@ -79,5 +100,6 @@ app.config(function($routeProvider,$httpProvider) {
                 .hideDelay(3000)
         );
     })
+
 })
 ;

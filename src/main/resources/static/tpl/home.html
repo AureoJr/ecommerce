@@ -1,31 +1,26 @@
 <md-content class="md-padding" layout-wrap layout="row">
     <div flex-xs="100" flex-gt-xs="25" layout="column" ng-repeat="product in home.products" ng-cloak>
-        <md-card flex="25">
-            <img ng-src="{{product.defaultImage}}" class="md-card-image" alt="Washed Out">
+        <md-card>
+            <img ng-src="{{product.defaultImage}}" class="md-card-image" alt="{{product.name}}">
             <md-card-title>
                 <md-card-title-text>
-                    <span class="md-headline">{{product.name}}</span>
+                    <span class="md-headline"> {{product.name}} </span>
                 </md-card-title-text>
             </md-card-title>
-            <md-card-actions layout="row" layout-align="start center">
-                <md-card-icon-actions>
-                    <md-button class="md-icon-button md-raised" aria-label="Comentários">
-                        <md-icon md-font-set="material-icons"> message </md-icon>
-                    </md-button>
-                    <md-button class="md-icon-button md-raised" aria-label="Comprar" ng-click="addProductToCart(product)">
-                        <md-icon md-font-set="material-icons">add_shopping_cart</md-icon>
-                    </md-button>
-                </md-card-icon-actions>
-                <div class="md-item-text" flex style="text-align: right">
-                    <h3>{{product.price | currency}}</h3>
-                </div>
-
-            </md-card-actions>
             <md-card-content>
-                <p>
-                    {{product.description}}
-                </p>
+                <p>{{product.description}} </p>
             </md-card-content>
+            <md-card-actions layout="row" layout-align="end center">
+                <md-button md-no-ink class="md-primary" style="width: 90%;  text-align: left;">
+                    {{product.price | currency}}
+                </md-button>
+                <md-button class="md-icon-button" aria-label="Fazer um comentário">
+                    <md-icon md-font-set="material-icons"> message </md-icon>
+                </md-button>
+                <md-button class="md-icon-button" aria-label="Adicionar ao carrinho" ng-click="addProductToCart(product)">
+                    <md-icon md-font-set="material-icons">add_shopping_cart</md-icon>
+                </md-button>
+            </md-card-actions>
         </md-card>
     </div>
 </md-content>
