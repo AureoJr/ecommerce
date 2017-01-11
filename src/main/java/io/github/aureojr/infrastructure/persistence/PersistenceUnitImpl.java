@@ -1,20 +1,28 @@
 package io.github.aureojr.infrastructure.persistence;
 
+import com.github.javafaker.Faker;
+import io.github.aureojr.core.catalog.domain.Category;
+import io.github.aureojr.core.catalog.domain.CategoryImpl;
+import io.github.aureojr.core.catalog.domain.Product;
+import io.github.aureojr.core.catalog.domain.ProductImpl;
 import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
 import io.github.aureojr.infrastructure.database.annotations.ID;
 import io.github.aureojr.infrastructure.database.annotations.TransientField;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.taskdefs.SQLExec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.annotation.PostConstruct;
+import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.sql.*;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,12 +59,12 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     @Value("${app.database.password}")
     private static String password;
 
+    @Value("${app.database.create}")
+    private static Boolean createDatabase;
+
     private static Connection conn;
 
     private int count =0;
-
-    @Autowired
-    private Environment env;
 
     public PersistenceUnitImpl() {
         if(conn == null){
@@ -68,6 +76,68 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
                 LOG.log(Level.SEVERE,e.getMessage(),e);
             }
         }
+    }
+
+    @PostConstruct
+    private void faker(){
+        Faker faker = new Faker(new Locale("pt-BR"));
+
+        CategoryImpl c = new CategoryImpl();
+        c.setEnabled(true);
+        c.setName("Carros");
+
+        save(c, CategoryImpl.class);
+        //Definindo 10 categorias
+        for (int i = 1; i <= 10; i++){
+            CategoryImpl category = new CategoryImpl();
+            category.setEnabled(true);
+            category.setName(faker.commerce().department());
+
+            save(category, CategoryImpl.class);
+        }
+
+        for (int i = 0; i < 100 ; i++){
+
+            ProductImpl p = new ProductImpl();
+            p.setQuantityAvailable((int) (Math.random() % 1000));
+            p.setEnabled(true);
+            CategoryImpl cat = new CategoryImpl();
+            Double d = Math.random() * 1000 % 10;
+            cat.setId(Long.parseLong(String.valueOf(d.intValue())));
+            p.setMainCategory((Category) findById(cat));
+            p.setColor(faker.color().name());
+            p.setDefaultImage("https://unsplash.it/400/500");
+            p.setDescription(faker.shakespeare().hamletQuote());
+            Double price = Math.random() * 10000 % 1000;
+            DecimalFormat df = new DecimalFormat("00.00");
+            p.setPrice(Double.parseDouble(df.format(price).replace(',','.')));
+            p.setSize((String.valueOf(Math.random() * 10000 % 1000)));
+            p.setWeight((String.valueOf(Math.random() * 10000 % 1000)));
+            p.setName(faker.commerce().productName());
+
+            save(p, ProductImpl.class);
+        }
+    }
+
+    public void init(){
+            final class SqlExecuter extends SQLExec {
+                public SqlExecuter() {
+                    Project project = new Project();
+                    project.init();
+                    setProject(project);
+                    setTaskType("sql");
+                    setTaskName("sql");
+                }
+            }
+
+            SqlExecuter exec = new SqlExecuter();
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            exec.setSrc(new File(classLoader.getResource("database.sql").getFile()));
+            exec.setDriver(DatabaseDriver.MARIADB.getDriverClassName());
+            exec.setPassword(password);
+            exec.setUserid(username);
+            exec.setUrl(urlConnection+":"+port);
+            exec.execute();
     }
 
     private void forceLoad() {
@@ -84,6 +154,8 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
             port = prop.getProperty("app.database.port") ;
             username = prop.getProperty("app.database.username") ;
             password = prop.getProperty("app.database.password") ;
+            createDatabase = Boolean.getBoolean(prop.getProperty("app.database.create")) ;
+            init();
         } catch (IOException e) {
             LOG.log(Level.SEVERE,e.getMessage(),e);
         }
@@ -91,48 +163,72 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
 
     @Override
-    public void save(Class entity) {
+    public void save(Object values, Class entity) {
 
         final StringBuilder insert = new StringBuilder();
 
         insert.append(INSERT);
         try{
-            prepareParametersInsert(entity,insert);
+            prepareParametersInsert(values,entity,insert);
         } catch (SQLException e){
             LOG.log(Level.SEVERE, e.getMessage(),e);
         }
 
     }
 
-    private void prepareParametersInsert(Class entity, StringBuilder sb) throws SQLException {
+    private void prepareParametersInsert(Object values,Class entity, StringBuilder sb) throws SQLException {
 
-        StringJoiner sj = getFields(entity);
+        StringJoiner sj = getFieldsWithoutID(entity);
 
-        if(entity.isAnnotationPresent(DefaultModel.class)){
+        if(!entity.isAnnotationPresent(DefaultModel.class)){
             LOG.log(Level.SEVERE, "A classe não possui a anotação DefaultModel");
             return;
         }
 
-        replace(TABLE,entity.getSimpleName(),sb);
+        replace(TABLE,getTableName(entity),sb);
         finalizeInsert(sb,sj.toString());
+        replace(FIELDS,sj.toString(),sb);
 
-        PreparedStatement ps = conn.prepareStatement(sb.toString());
+        try(PreparedStatement ps = conn.prepareStatement(sb.toString())) {
+            count = 1;
+            for (String fieldName : sj.toString().split(",")) {
+                setPsValue(ps, entity, values, fieldName);
+            }
 
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            LOG.log(Level.SEVERE, e.getMessage(),e);
+        }
+    }
 
-        Arrays.stream(sj.toString().split(","))
-                .filter(field ->  isAnnotated(entity,field))
-                .forEach(fieldName -> {
-                    try {
-                        Field field = entity.getClass().getDeclaredField(fieldName);
-                        field.setAccessible(true);
-                        ps.setObject(getNext(),field.get(entity));
-                    } catch (NoSuchFieldException | SQLException | IllegalAccessException e) {
-                        LOG.log(Level.SEVERE, e.getMessage(),e);
-                    }
-                });
+    private void setPsValue(PreparedStatement ps, Class entity, Object values,String fieldName) throws SQLException {
 
-        ps.executeUpdate();
-        ps.close();
+        try {
+            Field field = values.getClass().getDeclaredField(fieldName.trim());
+            field.setAccessible(true);
+            ps.setObject(count, isDefaultTableModel(field,entity) ? getIdValue(field,entity) : field.get(values));
+            count ++;
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            LOG.log(Level.SEVERE, e.getMessage(),e);
+        }
+    }
+
+    private Object getIdValue(Field field,Object objectInstance) {
+//        try {
+//            Object obj = field.get(objectInstance);
+//            Field idField = obj.getClass().getDeclaredField("id");
+//            return idField.get(obj);
+//        } catch (IllegalAccessException | NoSuchFieldException e ) {
+//            LOG.log(Level.SEVERE, e.getMessage(),e);
+ //       }
+        Double d = Math.random() * 100 % 10;
+        return d.intValue();
+    }
+
+    private boolean isDefaultTableModel(Field field,Object objectInstance) throws IllegalAccessException {
+
+       return field.isAnnotationPresent(DefaultModel.class) || field.getName().equals("mainCategory");
 
     }
 
@@ -145,23 +241,30 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
         return sj;
     }
 
+    private StringJoiner getFieldsWithoutID(Class entity) {
+
+        StringJoiner sj = new StringJoiner(", ");
+        Arrays.stream(entity.getDeclaredFields())
+                .filter((field) -> (!field.isAnnotationPresent(TransientField.class)
+                            && !field.isAnnotationPresent(ID.class))
+                )
+                .forEach(field -> sj.add(field.getName()));
+        return sj;
+    }
+
     private boolean isAnnotated(Class entity, String field) {
         try {
-            return !entity.getField(field).isAnnotationPresent(TransientField.class);
+            return !entity.getField(field).isAnnotationPresent(TransientField.class)
+                    || !entity.getField(field).isAnnotationPresent(ID.class);
         } catch (NoSuchFieldException e) {
             LOG.log(Level.SEVERE, e.getMessage(),e);
         }
         return false;
     }
 
-    private int getNext(){
-        count = count++;
-        return count ;
-    }
-
     private void finalizeInsert(StringBuilder sb,String fields) {
         StringJoiner sj = new StringJoiner(",");
-        for(int i = 1; i < fields.length() - fields.replace(",", "").length() + 1; i ++ )
+        for(String s : fields.split(",") )
             sj.add("?");
         replace(VALUES,sj.toString(),sb);
     }
@@ -256,6 +359,8 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     private void prepareSelect(StringBuilder select, Class entity, String where) {
         prepareSelect(select,entity);
         replace(WHERE,where == null ? " 1 = 1 " : where,select);
+        if(select.toString().contains("mainCategory"))
+        replace("mainCategory,", " ", select);
     }
 
     private String getTableName(Class entity) {

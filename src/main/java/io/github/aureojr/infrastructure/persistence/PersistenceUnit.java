@@ -8,7 +8,7 @@ import java.util.List;
  */
 public interface PersistenceUnit<T> {
 
-    void save(Class entity);
+    void save(Object values, Class entity);
 
     void update(Class entity, Object object);
 

@@ -32,7 +32,6 @@ public class ProductImpl implements Product,Serializable{
 
     private Double price;
 
-    @TransientField
     private Category mainCategory;
 
     @TransientField
@@ -62,6 +61,7 @@ public class ProductImpl implements Product,Serializable{
         this.checked = checked;
     }
 
+    @TransientField
     private Boolean checked;
 
     public Boolean isEnabled() {

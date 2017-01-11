@@ -1,22 +1,28 @@
-CREATE DATABASE ecommerce;
+DROP DATABASE IF EXISTS ecommerce;
+CREATE DATABASE IF NOT EXISTS ecommerce;
+
+use ecommerce;
 
 CREATE TABLE category(
-  id integer unsigned PRIMARY KEY not null,
-  enable BOOLEAN default TRUE,
-  name varchar(60)
+  id integer unsigned not null AUTO_INCREMENT,
+  enabled BOOLEAN default TRUE,
+  name varchar(60),
+  PRIMARY KEY (id)
 );
 
 create TABLE  product (
-  id integer unsigned PRIMARY KEY not null,
+  id integer unsigned not null AUTO_INCREMENT,
   name VARCHAR(60),
   quantityAvailable integer,
   size VARCHAR(30),
   color VARCHAR(400),
   weight VARCHAR(30),
   description VARCHAR(4000),
-  price DOUBLE,
+  price DOUBLE(10,2),
   mainCategory INTEGER UNSIGNED,
   enabled boolean,
-  checked BOOLEAN DEFAULT FALSE
+  checekd boolean DEFAULT false,
+  defaultImage VARCHAR(400) default '/img/semimagem.jpg',
+  PRIMARY KEY (id)
 
 );
