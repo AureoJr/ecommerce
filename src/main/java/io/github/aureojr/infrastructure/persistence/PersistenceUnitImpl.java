@@ -3,14 +3,19 @@ package io.github.aureojr.infrastructure.persistence;
 import io.github.aureojr.infrastructure.database.annotations.DefaultModel;
 import io.github.aureojr.infrastructure.database.annotations.ID;
 import io.github.aureojr.infrastructure.database.annotations.TransientField;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,17 +36,56 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     private static final String WHERE = "$where";
     private static final Logger LOG = Logger.getLogger(PersistenceUnitImpl.class.getName());
 
+    @Value("${app.database.url}")
+    private static String urlConnection;
+
+    @Value("${app.database.port}")
+    private static String port;
+
+    @Value("${app.database.database}")
+    private static String databaseName;
+
+    @Value("${app.database.username}")
+    private static String username;
+
+    @Value("${app.database.password}")
+    private static String password;
+
     private static Connection conn;
 
     private int count =0;
 
+    @Autowired
+    private Environment env;
+
     public PersistenceUnitImpl() {
         if(conn == null){
+            forceLoad();
+
             try {
-                conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ecommerce","root","alfred2016");
+                conn = DriverManager.getConnection(urlConnection+":"+port+"/"+databaseName,username,password);
             } catch (SQLException e) {
                 LOG.log(Level.SEVERE,e.getMessage(),e);
             }
+        }
+    }
+
+    private void forceLoad() {
+        Properties prop = new Properties();
+        InputStream input = null;
+        try {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            URL url = classLoader.getResource("application.properties");
+            input = url.openStream();
+
+            prop.load(input);
+            urlConnection = prop.getProperty("app.database.url");
+            databaseName = prop.getProperty("app.database.database") ;
+            port = prop.getProperty("app.database.port") ;
+            username = prop.getProperty("app.database.username") ;
+            password = prop.getProperty("app.database.password") ;
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE,e.getMessage(),e);
         }
     }
 
@@ -140,7 +184,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     }
 
     private void prepareDelete(StringBuilder delete, Class entity) throws NoSuchFieldException, SQLException, IllegalAccessException {
-        long valor;
+        Long valor;
         replace(TABLE,getTableName(entity),delete);
 
         valor = appendId(entity,delete);
@@ -151,9 +195,16 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
     }
 
     private long appendId(Object entity , StringBuilder sb) throws NoSuchFieldException, IllegalAccessException {
-        ID id = entity.getClass().getAnnotation(ID.class);
-        long valor = (long) entity.getClass().getField(id.name()).get(entity);
-        replace(WHERE,id.name()+ " = ?", sb);
+        String idName = "id";
+        Field field = entity.getClass().getDeclaredField(idName);
+        field.setAccessible(true);
+        if (field.isAnnotationPresent(ID.class)) {
+            ID id = field.getAnnotation(ID.class);
+            idName = id.name();
+        }
+
+        Long valor = (Long)field.get(entity);
+        replace(WHERE,idName+ " = ?", sb);
         return valor;
     }
 
@@ -165,7 +216,7 @@ public class PersistenceUnitImpl<T> implements PersistenceUnit<T> {
 
         prepareSelect(select,entity.getClass());
         try(PreparedStatement ps = conn.prepareStatement(select.toString())) {
-            long valor = appendId(entity, select);
+            Long valor = appendId(entity, select);
             ps.setObject(1,valor);
 
             return parseObject(ps.getResultSet(),entity.getClass());

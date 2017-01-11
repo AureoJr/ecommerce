@@ -15,7 +15,7 @@ import java.util.Objects;
 @DefaultModel(name = "product")
 public class ProductImpl implements Product,Serializable{
 
-    @ID
+    @ID(name = "id")
     private Long id;
 
     private String name;
@@ -49,6 +49,20 @@ public class ProductImpl implements Product,Serializable{
     }
 
     private Boolean enabled;
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public Boolean isChecked() {
+        return checked;
+    }
+
+    public void setChecked(Boolean checked) {
+        this.checked = checked;
+    }
+
+    private Boolean checked;
 
     public Boolean isEnabled() {
         return enabled;

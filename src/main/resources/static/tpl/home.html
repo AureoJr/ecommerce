@@ -1,7 +1,7 @@
 <md-content class="md-padding" layout-wrap layout="row">
     <div flex-xs="100" flex-gt-xs="25" layout="column" ng-repeat="product in home.products" ng-cloak>
         <md-card>
-            <img ng-src="{{product.defaultImage}}" class="md-card-image" alt="{{product.name}}">
+            <img ng-src="{{product.defaultImage}}" spinner-on-load class="md-card-image" alt="{{product.name}}">
             <md-card-title>
                 <md-card-title-text>
                     <span class="md-headline"> {{product.name}} </span>
@@ -17,7 +17,7 @@
                 <md-button class="md-icon-button" aria-label="Fazer um comentário">
                     <md-icon md-font-set="material-icons"> message </md-icon>
                 </md-button>
-                <md-button class="md-icon-button" aria-label="Adicionar ao carrinho" ng-click="addProductToCart(product)">
+                <md-button class="md-icon-button" aria-label="Adicionar ao carrinho" ng-click="home.addProductToCart(product)">
                     <md-icon md-font-set="material-icons">add_shopping_cart</md-icon>
                 </md-button>
             </md-card-actions>

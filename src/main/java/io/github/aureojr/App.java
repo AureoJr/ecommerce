@@ -62,7 +62,7 @@ public class App {
             http.httpBasic()
                 .and()
                 .authorizeRequests()
-                .antMatchers("/","/index.html", "/tpl/**","/product/*","/categories","/cart/*", "/img*").permitAll()
+                .antMatchers("/","/index.html", "/tpl/**","/product/*","/categories","/cart/*", "/cart*", "/img*").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .csrf()

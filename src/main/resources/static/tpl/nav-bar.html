@@ -1,0 +1,24 @@
+<md-toolbar>
+    <div class="md-toolbar-tools">
+        <h2>
+            <a ng-href="#/"> Home </a>
+        </h2>
+        <span flex></span>
+        <md-button class="md-fab md-mini" style="line-height: initial" ng-click="nav.goTo('/cart')">
+            <i class="material-icons">add_shopping_cart</i>
+        </md-button>
+    </div>
+</md-toolbar>
+<div>
+	<span ng-repeat="step in cart.steps" ng-class="{active: $last}" ng-switch="$last || !!step.abstract">
+		<a ng-switch-when="false" href="{{step.ncyBreadcrumbLink}}">
+			{{step.ncyBreadcrumbLabel}}
+		</a>
+		<span ng-switch-when="false">
+			 /
+		</span>
+		<span ng-switch-when="true">
+			{{step.ncyBreadcrumbLabel}}
+		</span>
+	</span>
+</div>

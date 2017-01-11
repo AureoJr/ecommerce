@@ -31,12 +31,14 @@ public class CartController {
         return returnDefault(product.getName() + " adicionado com sucesso !");
     }
 
-    @RequestMapping(value = "cart", method = RequestMethod.DELETE)
-    public Map<String,Object> removeFromCart(Product product, HttpSession session){
-
+    @RequestMapping(value = "cart/{productId}", method = RequestMethod.DELETE)
+    public Map<String,Object> removeFromCart(@PathVariable("productId") Long productId, HttpSession session){
+        ProductImpl p = new ProductImpl();
+        p.setId(productId);
+        Product product = productRepository.getProductById(p);
         doRemove(product,session);
 
-        return returnDefault(product.getName() + " removido com sucesso !");
+        return returnDefault(product != null ? product.getName() : "produto" + " removido com sucesso !");
     }
 
     @RequestMapping(value = "cart", method = RequestMethod.GET)
